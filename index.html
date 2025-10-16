@@ -93,7 +93,6 @@ body {
   z-index:10;
 }
 
-/* 배경 div */
 #background {
   position: absolute;
   top:0; left:0;
@@ -146,7 +145,6 @@ const backgroundEl = document.getElementById('background');
 let timers = [];
 let skipTriggered = false;
 
-// 오각형 위치
 const positions = [
   {top:'10', left:'50%', transform:'translate(-50%,0)'},
   {top:'50%', left:'90%', transform:'translate(-50%,-50%)'},
@@ -155,7 +153,6 @@ const positions = [
   {top:'50%', left:'10', transform:'translate(-50%,-50%)'}
 ];
 
-// 종이 위치
 const paperPositions = [
   {top:'-5%', left:'50%', transform:'translate(-50%,0)', rotate:'0deg'},
   {top:'50%', left:'90%', transform:'translate(-50%,-50%)', rotate:'35deg'},
@@ -164,7 +161,6 @@ const paperPositions = [
   {top:'50%', left:'10', transform:'translate(-50%,-50%)', rotate:'-5deg'}
 ];
 
-// 오각형 크기 스케일링
 function scalePosition(pos, scale=1.5){
   const getVal = v => parseFloat(v);
   const top = 50 + (getVal(pos.top) - 50) * scale;
@@ -213,7 +209,7 @@ function showImages(){
     imageWrap.style.display='block';
 
     mainImages.forEach((link, i)=>{
-      // 종이
+    
       const paper = document.createElement('img');
       paper.src = paperImage;
       paper.style.zIndex='0';
@@ -224,7 +220,6 @@ function showImages(){
       paper.style.height = '350px';
       imageWrap.appendChild(paper);
 
-      // 기존 이미지
       const img = document.createElement('img');
       img.src = link;
       img.style.zIndex='1';
@@ -232,7 +227,6 @@ function showImages(){
       img.style.left = scaledPositions[i].left;
       img.style.transform = scaledPositions[i].transform;
 
-      // palatte 클릭
       if(link.includes('palatte.png')){
         img.style.cursor = 'pointer';
         img.addEventListener('click', ()=>{
@@ -247,7 +241,7 @@ function showImages(){
       imageWrap.style.opacity='1';
       titleEl.style.opacity='1';
       titleEl.style.transform='translate(-50%,0)';
-      backgroundEl.style.opacity='0.6'; // 배경 등장
+      backgroundEl.style.opacity='0.6'; 
     });
   },500);
 }
