@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>나의 스케치북</title>
+  <style>
+    @font-face {
+      font-family: 'YunChorokwoosanEoriniMinguk';
+      src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408@1.0/YoonChildfundkoreaMinGuk.woff2') format('woff2');
+      font-weight: normal;
+      font-display: swap;
+    }
+    body, h1, .controls, .text-item, #saved-list {
+      font-family: 'YunChorokwoosanEoriniMinguk', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      position: relative;
+      z-index: 0;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('bg.png') no-repeat center center / cover;
+      opacity: 0.6;
+      z-index: -1;  
+    }
+
+    /* 돌아가기 버튼 */
+    #backBtn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      padding: 8px 12px;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 100;
+      font-size: 14px;
+      transition: background 0.3s ease;
+    }
+    #backBtn:hover {
+      background: #555;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .main-container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    #sketch-container {
+      position: relative;
+      width: 1000px;
+      height: 800px;
+      border-radius: 16px;
+      background: #fff;
+      cursor: crosshair;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    #sketch {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 16px;
+    }
+
+    .text-item {
+      position: absolute;
+      cursor: move;
+      user-select: none;
+      white-space: pre;
+    }
+
+    #saved-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 820px;
+      overflow-y: auto;
+    }
+
+    .saved-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      background: #fff;
+      padding: 6px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .saved-item img {
+      width: 250px;
+      height: 200px;
+      object-fit: contain;
+      border: 1px solid #aaa;
+    }
+
+    .mode-btn {
+      padding: 6px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 4px;
+    }
+
+    .active {
+      background: #333;
+      color: #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- 돌아가기 버튼 -->
+  <button id="backBtn">무기력 세계로 돌아가기</button>
+
+  <h1>낙서장</h1>
+
+  <div class="main-container">
+    <div class="controls">
+      <input id="textInput" type="text" placeholder="텍스트 입력">
+      <input id="textColor" type="color" value="#000000" oninput="updatePreview()">
+      <input id="textSize" type="number" value="24" min="10" max="100" oninput="updatePreview()">
+      <button onclick="addText()">텍스트 추가</button>
+  
+      <label style="padding-top: 40px;">펜 색상</label>
+      <input id="penColor" type="color" value="#000000" oninput="setPenColor(this.value)">
+      <label>펜 굵기</label>
+      <input id="penSize" type="range" min="1" max="20" value="2" oninput="ctx.lineWidth=this.value">
+      <div style="padding-bottom: 40px;">
+        <button id="penBtn" class="mode-btn active" onclick="setMode('pen')">펜</button>
+        <button id="eraserBtn" class="mode-btn" onclick="setMode('eraser')">지우개</button>
+        <button id="clearAllBtn" class="mode-btn" onclick="clearAll()">전체 지우기</button>
+      </div>
+    
+      <input id="dateInput" type="date">
+      <button onclick="saveSketch()">저장</button>
+    </div>
+
+    <div id="sketch-container">
+      <canvas id="sketch" width="1000" height="800"
+        onmousedown="startDraw(event)"
+        onmousemove="draw(event)"
+        onmouseup="stopDraw()"
+        onmouseleave="stopDraw()"
+      ></canvas>
+    </div>
+
+    <div id="saved-list"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script>
+    const canvas = document.getElementById("sketch");
+    const ctx = canvas.getContext("2d");
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#000";
+    ctx.globalCompositeOperation = "source-over";
+
+    let drawing = false;
+    let mode = "pen";
+
+    function startDraw(e){
+      drawing = true;
+      ctx.beginPath();
+      ctx.moveTo(e.offsetX, e.offsetY);
+    }
+    function draw(e){
+      if(!drawing) return;
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+    }
+    function stopDraw(){
+      drawing = false;
+    }
+
+    function setMode(m){
+      mode = m;
+      if(mode === "pen"){
+        ctx.globalCompositeOperation = "source-over";
+        setActiveBtn("penBtn");
+      } else {
+        ctx.globalCompositeOperation = "destination-out";
+        setActiveBtn("eraserBtn");
+      }
+    }
+
+    function setActiveBtn(id){
+      document.getElementById("penBtn").classList.remove("active");
+      document.getElementById("eraserBtn").classList.remove("active");
+      document.getElementById("clearAllBtn").classList.remove("active");
+      document.getElementById(id).classList.add("active");
+    }
+
+    function setPenColor(color){
+      ctx.strokeStyle = color;
+      if(mode === "eraser") return;
+    }
+
+    let previewStyle = {color:"#000000", size:24};
+    function updatePreview(){
+      previewStyle.color = document.getElementById("textColor").value;
+      previewStyle.size = document.getElementById("textSize").value;
+    }
+
+    function addText(){
+      const val = document.getElementById("textInput").value.trim();
+      if(!val) return;
+      const div = document.createElement("div");
+      div.className = "text-item";
+      div.textContent = val;
+      div.style.left = "50px";
+      div.style.top = "50px";
+      div.style.color = previewStyle.color;
+      div.style.fontSize = previewStyle.size+"px";
+      document.getElementById("sketch-container").appendChild(div);
+      makeDraggable(div);
+      document.getElementById("textInput").value = "";
+    }
+
+    function makeDraggable(el){
+      let offsetX, offsetY, dragging = false;
+      el.onmousedown = (e)=>{
+        dragging = true;
+        offsetX = e.clientX - el.offsetLeft;
+        offsetY = e.clientY - el.offsetTop;
+        el.style.zIndex = 1000;
+      }
+      document.onmousemove = (e)=>{
+        if(!dragging) return;
+        el.style.left = (e.clientX - offsetX) + "px";
+        el.style.top = (e.clientY - offsetY) + "px";
+      }
+      document.onmouseup = ()=>{
+        dragging = false;
+        el.style.zIndex = "";
+      }
+    }
+
+    function saveSketch(){
+      const dateVal = document.getElementById("dateInput").value;
+      if(!dateVal){
+        alert("날짜를 선택하세요!");
+        return;
+      }
+      html2canvas(document.getElementById("sketch-container")).then(canvas=>{
+        const img = document.createElement("img");
+        img.src = canvas.toDataURL("image/png");
+
+        const item = document.createElement("div");
+        item.className = "saved-item";
+
+        const dateLabel = document.createElement("div");
+        dateLabel.textContent = dateVal;
+
+        const delBtn = document.createElement("button");
+        delBtn.innerHTML = "🔥";
+        delBtn.style.padding = "4px 6px";
+        delBtn.style.border = "none";
+        delBtn.style.borderRadius = "4px";
+        delBtn.style.background = "#eee";
+        delBtn.style.cursor = "pointer";
+        delBtn.style.fontSize = "16px";
+
+        delBtn.onmouseover = () => {
+          delBtn.style.background = "#e74c3c";
+          delBtn.style.color = "#fff";
+        };
+        delBtn.onmouseout = () => {
+          delBtn.style.background = "#eee";
+          delBtn.style.color = "#000";
+        };
+        delBtn.onclick = () => {
+          item.remove();
+        };
+
+        item.appendChild(img);
+        item.appendChild(dateLabel);
+        item.appendChild(delBtn);
+
+        document.getElementById("saved-list").appendChild(item);
+      });
+    }
+
+    function clearAll(){
+      if(confirm("정말 스케치북의 내용을 모두 지우시겠습니까?")){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const texts = document.querySelectorAll(".text-item");
+        texts.forEach(t => t.remove());
+      }
+    }
+
+    // 돌아가기 버튼 이벤트
+    document.getElementById("backBtn").addEventListener("click", ()=>{
+      window.location.href = "../index.html";
+    });
+  </script>
+</body>
+</html>

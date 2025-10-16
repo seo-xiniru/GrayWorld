@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>무기력 세계</title>
+<style>
+@font-face {
+  font-family: 'YunChorokwoosanEoriniMinguk';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408@1.0/YoonChildfundkoreaMinGuk.woff2') format('woff2');
+  font-weight: normal;
+  font-display: swap;
+}
+
+:root { --font-size: 1.5rem; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  font-family: 'YunChorokwoosanEoriniMinguk', sans-serif;
+  color: #222;
+  position: relative;
+}
+
+#message-wrap {
+  text-align: center;
+  max-width: 90ch;
+  transition: opacity 1s ease;
+  z-index: 10;
+  position: relative;
+}
+
+#message {
+  font-size: var(--font-size);
+  opacity:0;
+  transform:translateY(8px);
+  transition: opacity 1.5s ease, transform 1.5s ease;
+  line-height:1.6;
+  font-weight:500;
+  letter-spacing:-0.01em;
+}
+
+#image-wrap {
+  display:none;
+  position:absolute;
+  top:50%;
+  left:50%;
+  width:400px;
+  height:400px;
+  transform:translate(-50%,-50%);
+  opacity:0;
+  transition: opacity 2s ease;
+  z-index:10;
+}
+
+#image-wrap img {
+  position:absolute;
+  width:150px;
+  height:150px;
+  object-fit:cover;
+}
+
+#skip-btn {
+  position:absolute;
+  bottom:120px;
+  padding:10px 20px;
+  font-size:1rem;
+  border:none;
+  background:#ddd;
+  border-radius:8px;
+  cursor:pointer;
+  transition:background 0.3s ease, opacity 1s ease;
+  z-index:10;
+}
+#skip-btn:hover{ background:#ccc; }
+
+#title {
+  position:absolute;
+  top:100px;
+  left:20%;
+  transform:translate(-50%,10px);
+  opacity:0;
+  font-size:3rem;
+  transition: opacity 2s ease, transform 2s ease;
+  z-index:10;
+}
+
+/* 배경 div */
+#background {
+  position: absolute;
+  top:0; left:0;
+  width:100%; height:100%;
+  background: url('zimg/main.png') no-repeat center center / cover;
+  opacity:0;
+  transition: opacity 2s ease;
+  z-index:-1;
+}
+</style>
+</head>
+<body>
+
+<div id="message-wrap"><div id="message"></div></div>
+<button id="skip-btn">skip</button>
+<p id="title">"무기력 세계"<br>무기력을 마음껏 즐기고 놓아주자.</p>
+<div id="image-wrap"></div>
+<div id="background"></div>
+
+<script>
+const messages = [
+  "오늘 아무것도 안 했네...",
+  "누워서 유튜브만 보고",
+  "과제한답시고 게임만 했잖아",
+  "자괴감 든다...",
+  "난 왜 이렇게 무기력하지..?"
+];
+
+const mainImages = [
+  'zimg/trashcan.png',
+  'zimg/palatte.png',
+  'zimg/text.png',
+  'zimg/nobrain.png',
+  'zimg/breathe.png'
+];
+
+const paperImage = 'zimg/paper.png';
+
+const FADE_TIME = 1500;
+const DISPLAY_TIME = 1500;
+const TOTAL_DURATION = FADE_TIME*2 + DISPLAY_TIME;
+
+const messageEl = document.getElementById('message');
+const messageWrap = document.getElementById('message-wrap');
+const imageWrap = document.getElementById('image-wrap');
+const skipBtn = document.getElementById('skip-btn');
+const titleEl = document.getElementById('title');
+const backgroundEl = document.getElementById('background');
+
+let timers = [];
+let skipTriggered = false;
+
+// 오각형 위치
+const positions = [
+  {top:'10', left:'50%', transform:'translate(-50%,0)'},
+  {top:'50%', left:'90%', transform:'translate(-50%,-50%)'},
+  {top:'75%', left:'75%', transform:'translate(-50%,0)'},
+  {top:'75%', left:'25%', transform:'translate(-50%,0)'},
+  {top:'50%', left:'10', transform:'translate(-50%,-50%)'}
+];
+
+// 종이 위치
+const paperPositions = [
+  {top:'-5%', left:'50%', transform:'translate(-50%,0)', rotate:'0deg'},
+  {top:'50%', left:'90%', transform:'translate(-50%,-50%)', rotate:'35deg'},
+  {top:'55%', left:'75%', transform:'translate(-50%,0)', rotate:'-40deg'},
+  {top:'60%', left:'25%', transform:'translate(-50%,0)', rotate:'20deg'},
+  {top:'50%', left:'10', transform:'translate(-50%,-50%)', rotate:'-5deg'}
+];
+
+// 오각형 크기 스케일링
+function scalePosition(pos, scale=1.5){
+  const getVal = v => parseFloat(v);
+  const top = 50 + (getVal(pos.top) - 50) * scale;
+  const left = 50 + (getVal(pos.left) - 50) * scale;
+  return {top: top+'%', left: left+'%', transform: pos.transform};
+}
+
+const scaledPositions = positions.map(p => scalePosition(p, 1.5));
+const scaledPaperPositions = paperPositions.map(p => {
+  const scaled = scalePosition(p, 1.5);
+  return {...scaled, rotate: p.rotate};
+});
+
+function showMessageOnce(i){
+  if(skipTriggered) return;
+  messageEl.textContent = messages[i];
+  messageEl.style.transition='none';
+  messageEl.style.opacity='0';
+  messageEl.style.transform='translateY(8px)';
+  requestAnimationFrame(()=>{
+    messageEl.style.transition=`opacity ${FADE_TIME}ms ease, transform ${FADE_TIME}ms ease`;
+    messageEl.style.opacity='1';
+    messageEl.style.transform='translateY(0px)';
+  });
+  setTimeout(()=>{
+    messageEl.style.opacity='0';
+    messageEl.style.transform='translateY(-8px)';
+  },FADE_TIME+DISPLAY_TIME);
+}
+
+function playSequence(){
+  messages.forEach((msg,i)=>{
+    const t = setTimeout(()=>showMessageOnce(i), i*TOTAL_DURATION);
+    timers.push(t);
+  });
+  const endTimer = setTimeout(showImages, messages.length*TOTAL_DURATION+500);
+  timers.push(endTimer);
+}
+
+function showImages(){
+  messageWrap.style.opacity='0';
+  skipBtn.style.opacity='0';
+  setTimeout(()=>{
+    messageWrap.style.display='none';
+    skipBtn.style.display='none';
+    imageWrap.style.display='block';
+
+    mainImages.forEach((link, i)=>{
+      // 종이
+      const paper = document.createElement('img');
+      paper.src = paperImage;
+      paper.style.zIndex='0';
+      paper.style.top = scaledPaperPositions[i].top;
+      paper.style.left = scaledPaperPositions[i].left;
+      paper.style.transform = `${scaledPaperPositions[i].transform} rotate(${scaledPaperPositions[i].rotate})`;
+      paper.style.width = '350px';
+      paper.style.height = '350px';
+      imageWrap.appendChild(paper);
+
+      // 기존 이미지
+      const img = document.createElement('img');
+      img.src = link;
+      img.style.zIndex='1';
+      img.style.top = scaledPositions[i].top;
+      img.style.left = scaledPositions[i].left;
+      img.style.transform = scaledPositions[i].transform;
+
+      // palatte 클릭
+      if(link.includes('palatte.png')){
+        img.style.cursor = 'pointer';
+        img.addEventListener('click', ()=>{
+          window.location.href = 'zhtml/palatte.html';
+        });
+      }
+
+      imageWrap.appendChild(img);
+    });
+
+    requestAnimationFrame(()=>{
+      imageWrap.style.opacity='1';
+      titleEl.style.opacity='1';
+      titleEl.style.transform='translate(-50%,0)';
+      backgroundEl.style.opacity='0.6'; // 배경 등장
+    });
+  },500);
+}
+
+skipBtn.addEventListener('click',()=>{
+  if(skipTriggered) return;
+  skipTriggered=true;
+  timers.forEach(t=>clearTimeout(t));
+  showImages();
+});
+
+playSequence();
+</script>
+</body>
+</html>
