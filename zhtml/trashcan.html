@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>쓰레기 정리</title>
+<style>
+  @font-face {
+      font-family: 'YunChorokwoosanEoriniMinguk';
+      src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408@1.0/YoonChildfundkoreaMinGuk.woff2') format('woff2');
+      font-weight: normal;
+      font-display: swap;
+    }
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: black;
+  cursor: url('trash.png'), auto; 
+}
+
+#score {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  color: white;
+  font-family: 'YunChorokwoosanEoriniMinguk', sans-serif;
+  font-size: 1.5rem;
+  z-index: 10;
+}
+
+canvas {
+  display: block;
+}
+
+body {
+  cursor: url('trash.png') 16 16, auto;
+}
+
+#backBtn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      padding: 8px 12px;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 100;
+      font-size: 14px;
+      transition: background 0.3s ease;
+    }
+    #backBtn:hover {
+      background: #555;
+    }
+
+</style>
+</head>
+<body>
+	<button id="backBtn">무기력 세계로 돌아가기</button>
+<div id="score">Score: 0</div>
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let width = canvas.width = window.innerWidth;
+let height = canvas.height = window.innerHeight;
+
+window.addEventListener('resize', ()=>{
+  width = canvas.width = window.innerWidth;
+  height = canvas.height = window.innerHeight;
+});
+
+// 공 클래스
+class Ball {
+  constructor(x,y,radius,vx,vy,color){
+    this.x=x; this.y=y;
+    this.radius=radius;
+    this.vx=vx; this.vy=vy;
+    this.color=color;
+    this.alive=true;
+    this.exploding=false;
+    this.explodeFrame=0;
+  }
+  
+  draw(){
+    if(this.exploding){
+      ctx.beginPath();
+      ctx.arc(this.x,this.y,this.radius+this.explodeFrame*2,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,0,0,${1-this.explodeFrame/10})`;
+      ctx.fill();
+      ctx.closePath();
+    } else {
+      ctx.beginPath();
+      ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);
+      ctx.fillStyle=this.color;
+      ctx.fill();
+      ctx.closePath();
+    }
+  }
+  
+  update(){
+    if(!this.alive) return;
+    if(!this.exploding){
+      this.x+=this.vx;
+      this.y+=this.vy;
+      // 벽 충돌
+      if(this.x+this.radius>width || this.x-this.radius<0) this.vx*=-1;
+      if(this.y+this.radius>height || this.y-this.radius<0) this.vy*=-1;
+    } else {
+      this.explodeFrame++;
+      if(this.explodeFrame>10) this.alive=false;
+    }
+  }
+  
+  checkClick(mx,my){
+    const dx=this.x-mx;
+    const dy=this.y-my;
+    return dx*dx+dy*dy<=this.radius*this.radius;
+  }
+  
+  explode(){
+    this.exploding=true;
+    this.explodeFrame=0;
+  }
+}
+
+const balls=[];
+const colors=['#ff5555','#55ff55','#5555ff','#ffff55','#ff55ff','#55ffff'];
+const NUM_BALLS = 80;
+for(let i=0;i<NUM_BALLS;i++){
+  const radius=10;
+  const x=Math.random()*(width-2*radius)+radius;
+  const y=Math.random()*(height-2*radius)+radius;
+  const vx=(Math.random()-0.5)*12; 
+  const vy=(Math.random()-0.5)*12; 
+  const color=colors[Math.floor(Math.random()*colors.length)];
+  balls.push(new Ball(x,y,radius,vx,vy,color));
+}
+
+let score=0;
+const scoreEl=document.getElementById('score');
+
+canvas.addEventListener('click',(e)=>{
+  const mx=e.clientX;
+  const my=e.clientY;
+  balls.forEach(ball=>{
+    if(ball.alive && !ball.exploding && ball.checkClick(mx,my)){
+      ball.explode();
+      score++;
+      scoreEl.textContent=`Score: ${score}`;
+    }
+  });
+});
+
+function animate(){
+  ctx.clearRect(0,0,width,height);
+  balls.forEach(ball=>{
+    ball.update();
+    if(ball.alive) ball.draw();
+  });
+  requestAnimationFrame(animate);
+}
+animate();
+
+document.getElementById("backBtn").addEventListener("click", ()=>{
+      window.location.href = "../index.html";
+    });
+</script>
+</body>
+</html>

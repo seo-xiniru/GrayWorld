@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>키보드를 닦자</title>
+<style>
+@font-face {
+  font-family: 'YunChorokwoosanEoriniMinguk';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408@1.0/YoonChildfundkoreaMinGuk.woff2') format('woff2');
+  font-weight: normal;
+  font-display: swap;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: black;
+  color: white;
+  font-family: 'YunChorokwoosanEoriniMinguk', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  flex-direction: column;
+  position: relative;
+}
+
+#backBtn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 8px 12px;
+  background: #333;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 9999;
+  font-size: 14px;
+  transition: background 0.3s ease;
+}
+#backBtn:hover { background: #555; }
+
+#message {
+  font-size: 1.5rem;
+  opacity: 0;
+  transition: opacity 1s ease;
+  text-align: center;
+  margin: 0 20px;
+}
+
+#title {
+  font-size: 2rem;
+  margin-top: 20px;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  position: absolute;
+  top: 200px;
+}
+
+button.actionBtn {
+  margin-top: 30px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: none; 
+}
+
+#hidden-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 90%;
+  height: 100px;
+  opacity: 0;
+  font-size: 1.5rem;
+}
+
+#output {
+  display: none;      
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  font-size: 5vw;
+  color: white;
+  background: black;
+  z-index: 9998;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 10px;
+}
+</style>
+</head>
+<body>
+
+<button id="backBtn">무기력 세계로 돌아가기</button>
+
+<div id="message"></div>
+<div id="title"></div>
+<button id="writeBtn" class="actionBtn">키보드 닦기</button>
+<button id="showBtn" class="actionBtn">작품 확인하기</button>
+<textarea id="hidden-input" placeholder="여기에 입력"></textarea>
+<div id="output"></div>
+
+<script>
+const messages = [
+  "그런 생각해본 적 있지 않아요?",
+  "노트북 키보드 좀 닦고 싶은데",
+  "자꾸 눌리는 게 짜증나네?",
+  "확 부셔버릴 수도 없고",
+  "당신을 위해 준비했어요"
+];
+
+const messageEl = document.getElementById('message');
+const titleEl = document.getElementById('title');
+const writeBtn = document.getElementById('writeBtn');
+const showBtn = document.getElementById('showBtn');
+const hiddenInput = document.getElementById('hidden-input');
+const output = document.getElementById('output');
+const backBtn = document.getElementById('backBtn');
+
+let index = 0;
+const originalTitle = "키보드를 닦으며 만든 나의 현대미술";
+const cleaningTitle = "키보드를 열심히 닦아 봅시다.";
+
+function showNextMessage() {
+  if (index < messages.length) {
+    messageEl.textContent = messages[index];
+    messageEl.style.opacity = 1;
+    setTimeout(() => { messageEl.style.opacity = 0; }, 1500);
+    setTimeout(() => {
+      index++;
+      showNextMessage();
+    }, 2000);
+  } else {
+    titleEl.textContent = originalTitle;
+    titleEl.style.opacity = 1;
+
+    writeBtn.style.display = 'inline-block';
+    showBtn.style.display = 'inline-block';
+  }
+}
+
+writeBtn.addEventListener('click', () => {
+  hiddenInput.focus();
+  titleEl.textContent = cleaningTitle;
+});
+
+showBtn.addEventListener('click', () => {
+  output.textContent = hiddenInput.value;
+  output.style.display = 'block';  // 화면 전체에 표시
+  titleEl.textContent = originalTitle;
+});
+
+backBtn.addEventListener('click', () => {
+  window.location.href = "../index.html";
+});
+
+showNextMessage();
+</script>
+
+</body>
+</html>

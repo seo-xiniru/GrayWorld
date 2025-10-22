@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <title>나의 스케치북</title>
+  <title>낙서장</title>
   <style>
     @font-face {
       font-family: 'YunChorokwoosanEoriniMinguk';
@@ -19,7 +19,6 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      font-family: sans-serif;
       background: #f5f5f5;
       padding: 20px;
       position: relative;
@@ -35,10 +34,10 @@
       height: 100%;
       background: url('bg.png') no-repeat center center / cover;
       opacity: 0.6;
-      z-index: -1;  
+      z-index: -1;
     }
 
-    /* 돌아가기 버튼 */
+ 
     #backBtn {
       position: fixed;
       top: 20px;
@@ -120,6 +119,8 @@
       padding: 6px;
       border-radius: 6px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      position: relative;
+      overflow: hidden;
     }
 
     .saved-item img {
@@ -127,6 +128,17 @@
       height: 200px;
       object-fit: contain;
       border: 1px solid #aaa;
+    }
+
+    .explode-gif {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 200px;
+      height: 200px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 10;
     }
 
     .mode-btn {
@@ -145,10 +157,9 @@
 </head>
 
 <body>
-  <!-- 돌아가기 버튼 -->
   <button id="backBtn">무기력 세계로 돌아가기</button>
 
-  <h1>낙서장</h1>
+  <h1>싫어하는 모든 것을 그리고 태워버리자.</h1>
 
   <div class="main-container">
     <div class="controls">
@@ -167,7 +178,6 @@
         <button id="clearAllBtn" class="mode-btn" onclick="clearAll()">전체 지우기</button>
       </div>
     
-      <input id="dateInput" type="date">
       <button onclick="saveSketch()">저장</button>
     </div>
 
@@ -228,7 +238,6 @@
 
     function setPenColor(color){
       ctx.strokeStyle = color;
-      if(mode === "eraser") return;
     }
 
     let previewStyle = {color:"#000000", size:24};
@@ -272,20 +281,12 @@
     }
 
     function saveSketch(){
-      const dateVal = document.getElementById("dateInput").value;
-      if(!dateVal){
-        alert("날짜를 선택하세요!");
-        return;
-      }
       html2canvas(document.getElementById("sketch-container")).then(canvas=>{
         const img = document.createElement("img");
         img.src = canvas.toDataURL("image/png");
 
         const item = document.createElement("div");
         item.className = "saved-item";
-
-        const dateLabel = document.createElement("div");
-        dateLabel.textContent = dateVal;
 
         const delBtn = document.createElement("button");
         delBtn.innerHTML = "🔥";
@@ -304,17 +305,28 @@
           delBtn.style.background = "#eee";
           delBtn.style.color = "#000";
         };
+
         delBtn.onclick = () => {
-          item.remove();
+          const gif = document.createElement("img");
+          gif.src = "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExeXhlNXozaDFmaDVxMTdxbDQ5cWdwdHBhMWx2ZjNldTZpdXFnZ25zYyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yr7n0u3qzO9nG/giphy.gif";
+          gif.className = "explode-gif";
+          item.appendChild(gif);
+
+          setTimeout(() => {
+            gif.remove();
+            item.remove();
+          }, 2000);
         };
 
         item.appendChild(img);
-        item.appendChild(dateLabel);
         item.appendChild(delBtn);
 
         document.getElementById("saved-list").appendChild(item);
       });
-    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    document.querySelectorAll(".text-item").forEach(t => t.remove())};
+    
 
     function clearAll(){
       if(confirm("정말 스케치북의 내용을 모두 지우시겠습니까?")){
@@ -324,7 +336,6 @@
       }
     }
 
-    // 돌아가기 버튼 이벤트
     document.getElementById("backBtn").addEventListener("click", ()=>{
       window.location.href = "../index.html";
     });

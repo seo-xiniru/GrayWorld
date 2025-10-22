@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>한숨을 푹푹</title>
+  <style>
+    @font-face {
+      font-family: 'YunChorokwoosanEoriniMinguk';
+      src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408@1.0/YoonChildfundkoreaMinGuk.woff2') format('woff2');
+      font-weight: normal;
+      font-display: swap;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      background-color: black;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'YunChorokwoosanEoriniMinguk', sans-serif;
+      font-size: 1.5rem;
+      overflow: hidden;
+      position: relative;
+    }
+
+     #backBtn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      padding: 8px 12px;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 100;
+      font-size: 14px;
+      transition: background 0.3s ease;
+    }
+    #backBtn:hover {
+      background: #555;
+    }
+
+    .fade-text {
+      opacity: 0;
+      transition: opacity 1s ease;
+      position: absolute;
+      text-align: center;
+    }
+
+    #lip {
+      display: none;
+      position: absolute;
+      width: 150px;
+      height: auto;
+      cursor: pointer;
+      z-index: 10;
+      transition: transform 0.3s ease;
+    }
+
+    #lip.clicked {
+      transform: scale(1.3);
+    }
+
+   
+    #gif-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      gap: 0;
+      z-index: 0;
+    }
+
+    .gif-item {
+      width: calc(100% / 6);
+      height: calc(100vh / 5);
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+	<button id="backBtn">무기력 세계로 돌아가기</button>
+  <div id="text" class="fade-text"></div>
+  <img id="lip" src="lip.png" alt="lip image">
+  <div id="gif-container"></div>
+
+  <script>
+    const texts = [
+      "숨을 들이마셔봐요",
+      "후우우우우웁!",
+      "이제 내쉬어봐요",
+      "후우우우우우우~"
+    ];
+
+    const textElement = document.getElementById("text");
+    const lipImage = document.getElementById("lip");
+    const gifContainer = document.getElementById("gif-container");
+
+    const gifLinks = [
+      "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnBxZ3M3bm9nNHRhY2hobTR1b2o4eTZocHc0d2YzeG5lN2MxYzF3dCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/BhyPiYtLJhIJVcTLLi/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnBxZ3M3bm9nNHRhY2hobTR1b2o4eTZocHc0d2YzeG5lN2MxYzF3dCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/hmpqVzwPARTmo/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnBxZ3M3bm9nNHRhY2hobTR1b2o4eTZocHc0d2YzeG5lN2MxYzF3dCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/da6mwoW6Cs0DbER02R/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnBxZ3M3bm9nNHRhY2hobTR1b2o4eTZocHc0d2YzeG5lN2MxYzF3dCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/qsnHYz7lXfDokIHfrd/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnBxZ3M3bm9nNHRhY2hobTR1b2o4eTZocHc0d2YzeG5lN2MxYzF3dCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/l4JyRqcDU93S334KQ/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbnBxZ3M3bm9nNHRhY2hobTR1b2o4eTZocHc0d2YzeG5lN2MxYzF3dCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/1X7AJbyzWUa2NXa5to/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3OGZjN24xNGR5NGVha3ljOXprbmh3dzcxNmR3bzJnbmtkN3hiZ2Z0diZlcD12MV9naWZzX3NlYXJjaCZjdD1n/XNBlAHifpZ20ZP6U1E/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3OGZjN24xNGR5NGVha3ljOXprbmh3dzcxNmR3bzJnbmtkN3hiZ2Z0diZlcD12MV9naWZzX3NlYXJjaCZjdD1n/idST45hKtuhJt35Ejx/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3OGZjN24xNGR5NGVha3ljOXprbmh3dzcxNmR3bzJnbmtkN3hiZ2Z0diZlcD12MV9naWZzX3NlYXJjaCZjdD1n/g0HkznFtL1d0xVRI1G/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3NDNsaTdoeGo3Z2w3aWdqOGdoYTZoaXhoeWs3NmtjYm4wbmxvNHR5aCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Qirsfuy8ZwxG/giphy.gif",
+      "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGhsNXM4ODd4eTZ3MXZjd3k4OXQyNDVmejQ0bjN2cGs5bTY4aWIwYyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1332tmUf9Myo4o/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3cm9tYjlsYXkzdnAwNm8xc3F0MDB5ZWI3ZTN2dmx4Y2swaWJ3N2p1YiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/eUTsHEs51AH3z6HKWd/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dW1jN2pwcDBmMTVxbXVlMDhibjFiZGt3cXNmaTM4cTdqN2s2ZzE5cCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/61BUOveh8FVcFSt7go/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dW1jN2pwcDBmMTVxbXVlMDhibjFiZGt3cXNmaTM4cTdqN2s2ZzE5cCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/N0BG2yjcWugI94SV8T/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dW1jN2pwcDBmMTVxbXVlMDhibjFiZGt3cXNmaTM4cTdqN2s2ZzE5cCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Xir88f7Y54j08KBWUQ/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3MnM0YWM4dXV1ZThndXpxM24zMGxrb21pMnNnbDBhYXgxbHN6bnBpeCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/HbtpWjqsovFxiHPIaj/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3MnM0YWM4dXV1ZThndXpxM24zMGxrb21pMnNnbDBhYXgxbHN6bnBpeCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/AS5YEjTdZZo6WYsoZP/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3MnM0YWM4dXV1ZThndXpxM24zMGxrb21pMnNnbDBhYXgxbHN6bnBpeCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/hAFPXyh2lHdfO/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3MnM0YWM4dXV1ZThndXpxM24zMGxrb21pMnNnbDBhYXgxbHN6bnBpeCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Ee0Q0gXNaWtCCy3aei/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3MW5zc256ZGFybDY0MmR0YnR1MmV6MHZkend3cjYyeXdyd2Rzamd0ZCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/RRxHEAxxQUQ0jd4YmD/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3Y3VoZXNwbWpjbGxodXh5MXRoM3ZmN2YyaG5vNXBpNGY3aGY0ZGJmYiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Mrr233qGdBzaEO3Hdq/giphy.gif",
+      "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3ejM0eGV5ZHl5cnZ5aTAzbG5qYzZtajJjaDgxMXB3OGE1MXZnOTJ2MCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/wmm7yeZVEDvlDQUoIm/giphy.gif"
+     
+    ];
+
+    let index = 0;
+
+    function showNextText() {
+      if (index < texts.length) {
+        textElement.textContent = texts[index];
+        textElement.style.opacity = 1;
+
+        setTimeout(() => {
+          textElement.style.opacity = 0;
+        }, 1500);
+
+        setTimeout(() => {
+          index++;
+          showNextText();
+        }, 2000);
+      } else {
+       
+        setTimeout(() => {
+          lipImage.style.display = "block";
+          lipImage.style.opacity = 0;
+          lipImage.style.transition = "opacity 1s ease";
+          setTimeout(() => (lipImage.style.opacity = 1), 100);
+        }, 1000);
+      }
+    }
+
+    lipImage.addEventListener("click", () => {
+      
+      const sound = new Audio("https://t1.daumcdn.net/cfile/tistory/9969DD3E5CFF97C125");
+      sound.play();
+
+    
+      lipImage.classList.add("clicked");
+      setTimeout(() => lipImage.classList.remove("clicked"), 200);
+
+      const randomGif = gifLinks[Math.floor(Math.random() * gifLinks.length)];
+      const gif = document.createElement("img");
+      gif.src = randomGif;
+      gif.classList.add("gif-item");
+      gifContainer.appendChild(gif);
+    });
+
+    showNextText();
+
+    document.getElementById("backBtn").addEventListener("click", ()=>{
+      window.location.href = "../index.html";
+    });
+  </script>
+</body>
+</html>

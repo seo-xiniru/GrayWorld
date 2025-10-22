@@ -82,6 +82,23 @@ body {
 }
 #skip-btn:hover{ background:#ccc; }
 
+#reset-btn {
+  position:absolute;
+  top:20px;
+  right:20px;
+  padding:8px 12px;
+  font-size:1rem;
+  border:none;
+  background:#ff6666;
+  color:white;
+  border-radius:6px;
+  cursor:pointer;
+  z-index:20;
+  transition: background 0.3s ease, opacity 1.5s ease; 
+  opacity: 0;
+}
+#reset-btn:hover { background:#ff4444; }
+
 #title {
   position:absolute;
   top:100px;
@@ -108,6 +125,7 @@ body {
 
 <div id="message-wrap"><div id="message"></div></div>
 <button id="skip-btn">skip</button>
+<button id="reset-btn">초기화</button>
 <p id="title">"무기력 세계"<br>무기력을 마음껏 즐기고 놓아주자.</p>
 <div id="image-wrap"></div>
 <div id="background"></div>
@@ -141,9 +159,12 @@ const imageWrap = document.getElementById('image-wrap');
 const skipBtn = document.getElementById('skip-btn');
 const titleEl = document.getElementById('title');
 const backgroundEl = document.getElementById('background');
+const resetBtn = document.getElementById('reset-btn');
 
 let timers = [];
 let skipTriggered = false;
+let bgTextInterval;
+let stopBgFalling = false;
 
 const positions = [
   {top:'10', left:'50%', transform:'translate(-50%,0)'},
@@ -196,7 +217,10 @@ function playSequence(){
     const t = setTimeout(()=>showMessageOnce(i), i*TOTAL_DURATION);
     timers.push(t);
   });
-  const endTimer = setTimeout(showImages, messages.length*TOTAL_DURATION+500);
+  const endTimer = setTimeout(()=>{
+    showImages();
+    startBackgroundTexts();
+  }, messages.length*TOTAL_DURATION+500);
   timers.push(endTimer);
 }
 
@@ -208,8 +232,9 @@ function showImages(){
     skipBtn.style.display='none';
     imageWrap.style.display='block';
 
+    const visitedLinks = JSON.parse(sessionStorage.getItem('visitedLinks') || '[]');
+
     mainImages.forEach((link, i)=>{
-    
       const paper = document.createElement('img');
       paper.src = paperImage;
       paper.style.zIndex='0';
@@ -226,11 +251,31 @@ function showImages(){
       img.style.top = scaledPositions[i].top;
       img.style.left = scaledPositions[i].left;
       img.style.transform = scaledPositions[i].transform;
+      img.style.cursor = 'pointer';
 
-      if(link.includes('palatte.png')){
-        img.style.cursor = 'pointer';
-        img.addEventListener('click', ()=>{
-          window.location.href = 'zhtml/palatte.html';
+      if (visitedLinks.includes(link)) {
+        img.style.display = 'none';
+      } else {
+        img.addEventListener('click', () => {
+          visitedLinks.push(link);
+          sessionStorage.setItem('visitedLinks', JSON.stringify(visitedLinks));
+
+          // ✅ 5개 전부 방문하면 엔딩 실행
+          if (visitedLinks.length === mainImages.length) {
+            showEndSequence();
+          }
+
+          if(link.includes('palatte.png')){
+            window.location.href = 'zhtml/palatte.html';
+          } else if(link.includes('trashcan.png')){
+            window.location.href = 'zhtml/trashcan.html';
+          } else if(link.includes('text.png')){
+            window.location.href = 'zhtml/text.html';
+          } else if(link.includes('nobrain.png')){
+            window.location.href = 'zhtml/nobrain.html';
+          } else if(link.includes('breathe.png')){
+            window.location.href = 'zhtml/breathe.html';
+          }
         });
       }
 
@@ -246,14 +291,152 @@ function showImages(){
   },500);
 }
 
+function stopBackgroundTexts() {
+  stopBgFalling = true;
+  clearInterval(bgTextInterval);
+  const bgTexts = bgContainer.querySelectorAll('div');
+  bgTexts.forEach(t => t.remove());
+}
+
+function showEndSequence() {
+  stopBackgroundTexts(); 
+  const endMessages = [
+    "어라... 다 어디갔지?",
+    "시간이 된건가...",
+    "무기력 세계를 탈출하자"
+  ];
+
+  const msgBox = document.createElement('div');
+  msgBox.style.position = 'absolute';
+  msgBox.style.top = '50%';
+  msgBox.style.left = '50%';
+  msgBox.style.transform = 'translate(-50%, -50%)';
+  msgBox.style.fontSize = '2rem';
+  msgBox.style.textAlign = 'center';
+  msgBox.style.opacity = '0';
+  msgBox.style.transition = 'opacity 1.5s ease';
+  msgBox.style.zIndex = '30';
+  document.body.appendChild(msgBox);
+
+  let index = 0;
+  function showNext() {
+    if (index >= endMessages.length) {
+      setTimeout(() => {
+        sessionStorage.clear();
+        location.reload();
+      }, 1500);
+      return;
+    }
+    msgBox.textContent = endMessages[index];
+    msgBox.style.opacity = '0';
+    requestAnimationFrame(() => { msgBox.style.opacity = '1'; });
+    setTimeout(() => {
+      msgBox.style.opacity = '0';
+      setTimeout(() => {
+        index++;
+        showNext();
+      }, 1500);
+    }, 2000);
+  }
+  showNext();
+}
+
 skipBtn.addEventListener('click',()=>{
   if(skipTriggered) return;
   skipTriggered=true;
   timers.forEach(t=>clearTimeout(t));
   showImages();
+  startBackgroundTexts();
 });
 
-playSequence();
+if(sessionStorage.getItem('seenMessages') === 'true'){
+  skipTriggered = true;
+  timers.forEach(t=>clearTimeout(t));
+  showImages();
+  startBackgroundTexts();
+} else {
+  playSequence();
+  sessionStorage.setItem('seenMessages','true');
+}
+
+resetBtn.addEventListener('click', () => {
+  sessionStorage.clear();
+  location.reload();
+});
+
+const bgMessages = [
+  '과제하기 싫어어어ㅓㅓ어ㅓ',
+  '유튜브 18시간 시청 미쳤다',
+  '릴스 5000번 넘기기',
+  '12시간 잘거야......',
+  '너무 졸려요 ㅠㅠㅠㅠ',
+  '며칠밤을 샌거지...',
+  '살려주어어어ㅓㅇ',
+  '띠리리라라라라핳ㅎ흐흐흐흫',
+  '누가 나 대신 움직여...',
+  '이불과 한몸이 되고 싶은걸',
+  '에어컨 세게 틀고 이불 끝까지 덮기',
+  '집 밖은 위험해',
+  '약속 취소되서 너무 행복한 상태',
+  '내향성 99퍼 인간 살려줘',
+  '아무것도 안하고 싶다',
+  '누가 나 대신 돈 좀 벌어줘',
+  '알바 가기 싫어요ㅠㅠㅠ'
+];
+
+const bgContainer = document.createElement('div');
+bgContainer.style.position = 'absolute';
+bgContainer.style.top = '0';
+bgContainer.style.left = '0';
+bgContainer.style.width = '100%';
+bgContainer.style.height = '100%';
+bgContainer.style.pointerEvents = 'none';
+bgContainer.style.overflow = 'hidden';
+bgContainer.style.zIndex = '-2';
+document.body.appendChild(bgContainer);
+
+function createBgText() {
+  if (stopBgFalling) return;
+  const text = document.createElement('div');
+  text.textContent = bgMessages[Math.floor(Math.random() * bgMessages.length)];
+  text.style.position = 'absolute';
+  text.style.top = '-2rem';
+  text.style.left = Math.random() * 100 + '%';
+  text.style.fontSize = '1.5rem';
+  text.style.opacity = '0.6';
+  text.style.whiteSpace = 'nowrap';
+  text.style.color = '#222';
+  
+  bgContainer.appendChild(text);
+
+  const speed = 1 + Math.random() * 1; 
+  function fall() {
+    if (stopBgFalling) { text.remove(); return; }
+    const currentTop = parseFloat(text.style.top);
+    if(currentTop > window.innerHeight + 50){
+      text.remove();
+      if (!stopBgFalling) createBgText(); 
+      return;
+    }
+    text.style.top = currentTop + speed + 'px';
+    requestAnimationFrame(fall);
+  }
+  requestAnimationFrame(fall);
+}
+
+function startBackgroundTexts(){
+  stopBgFalling = false;
+  for(let i=0; i<15; i++){
+    setTimeout(createBgText, i*200);
+  }
+  bgTextInterval = setInterval(createBgText, 1500);
+}
+
+window.addEventListener('load', () => {
+  requestAnimationFrame(() => {
+    resetBtn.style.opacity = '1';
+  });
+});
 </script>
 </body>
 </html>
