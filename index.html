@@ -234,6 +234,12 @@ function showImages(){
 
     const visitedLinks = JSON.parse(sessionStorage.getItem('visitedLinks') || '[]');
 
+    // ✅ 모든 이미지를 이미 방문했으면 바로 엔딩 실행
+    if(visitedLinks.length === mainImages.length){
+      showEndSequence();
+      return;
+    }
+
     mainImages.forEach((link, i)=>{
       const paper = document.createElement('img');
       paper.src = paperImage;
@@ -372,7 +378,7 @@ const bgMessages = [
   '너무 졸려요 ㅠㅠㅠㅠ',
   '며칠밤을 샌거지...',
   '살려주어어어ㅓㅇ',
-  '띠리리라라라라핳ㅎ흐흐흐흫',
+  '띠리리라라라라핳ㅎ흐흐흫',
   '누가 나 대신 움직여...',
   '이불과 한몸이 되고 싶은걸',
   '에어컨 세게 틀고 이불 끝까지 덮기',
