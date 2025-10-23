@@ -10,61 +10,101 @@
       src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408@1.0/YoonChildfundkoreaMinGuk.woff2') format('woff2');
       font-weight: normal;
       font-display: swap;
-    }
-body {
-  margin: 0;
-  overflow: hidden;
-  background-color: black;
-  cursor: url('trash.png'), auto; 
-}
-
-#score {
-  position: absolute;
-  top: 10px;
-  right: 20px;
-  color: white;
-  font-family: 'YunChorokwoosanEoriniMinguk', sans-serif;
-  font-size: 1.5rem;
-  z-index: 10;
-}
-
-canvas {
-  display: block;
-}
-
-body {
-  cursor: url('trash.png') 16 16, auto;
-}
-
-#backBtn {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      padding: 8px 12px;
-      background: #333;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      z-index: 100;
-      font-size: 14px;
-      transition: background 0.3s ease;
-    }
-    #backBtn:hover {
-      background: #555;
-    }
-
+  }
+  body {
+    margin: 0;
+    overflow: hidden;
+    background-color: black;
+    cursor: url('trash.png') 16 16, auto;
+  }
+  #score, #timer {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    color: white;
+    font-family: 'YunChorokwoosanEoriniMinguk', sans-serif;
+    font-size: 1.5rem;
+    z-index: 10;
+  }
+  #timer {
+    top: 50px;
+  }
+  #title {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-family: 'YunChorokwoosanEoriniMinguk', sans-serif;
+    font-size: 1.8rem;
+    text-align: center;
+    z-index: 10;
+  }
+  #backBtn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    padding: 8px 12px;
+    background: #333;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    z-index: 100;
+    font-size: 14px;
+    transition: background 0.3s ease;
+  }
+  #backBtn:hover {
+    background: #555;
+  }
+  canvas {
+    display: block;
+  }
+  #endScreen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-family: 'YunChorokwoosanEoriniMinguk', sans-serif;
+    text-align: center;
+    display: none;
+    z-index: 20;
+  }
+  #endScore {
+    font-size: 3rem;
+    margin-bottom: 20px;
+  }
+  #restartBtn {
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  #restartBtn:hover {
+    background: #555;
+  }
 </style>
 </head>
 <body>
-	<button id="backBtn">무기력 세계로 돌아가기</button>
-<div id="score">Score: 0</div>
-<canvas id="gameCanvas"></canvas>
+  <button id="backBtn">무기력 세계로 돌아가기</button>
+  <div id="title">머리 속 걱정을 쓰레기통으로 먹어버리자</div>
+  <div id="score">Score: 0</div>
+  <div id="timer">Time: 30</div>
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="endScreen">
+    <div id="endScore"></div>
+    <button id="restartBtn">다시하기</button>
+  </div>
 
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-
 let width = canvas.width = window.innerWidth;
 let height = canvas.height = window.innerHeight;
 
@@ -73,79 +113,89 @@ window.addEventListener('resize', ()=>{
   height = canvas.height = window.innerHeight;
 });
 
+const emojis = ['😈','👹','🥺','😭','🤯','😡','🤪'];
+
 // 공 클래스
 class Ball {
-  constructor(x,y,radius,vx,vy,color){
+  constructor(x,y,radius,vx,vy,emoji){
     this.x=x; this.y=y;
     this.radius=radius;
     this.vx=vx; this.vy=vy;
-    this.color=color;
+    this.emoji=emoji;
     this.alive=true;
     this.exploding=false;
     this.explodeFrame=0;
   }
   
   draw(){
+    if (!this.alive) return;
     if(this.exploding){
-      ctx.beginPath();
-      ctx.arc(this.x,this.y,this.radius+this.explodeFrame*2,0,Math.PI*2);
-      ctx.fillStyle=`rgba(255,0,0,${1-this.explodeFrame/10})`;
-      ctx.fill();
-      ctx.closePath();
+      ctx.save();
+      ctx.globalAlpha = 1 - this.explodeFrame / 10;
+      ctx.font = `${this.radius*2 + this.explodeFrame*3}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(this.emoji, this.x, this.y);
+      ctx.restore();
     } else {
-      ctx.beginPath();
-      ctx.arc(this.x,this.y,this.radius,0,Math.PI*2);
-      ctx.fillStyle=this.color;
-      ctx.fill();
-      ctx.closePath();
+      ctx.font = `${this.radius*2}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(this.emoji, this.x, this.y);
     }
   }
   
   update(){
     if(!this.alive) return;
-    if(!this.exploding){
-      this.x+=this.vx;
-      this.y+=this.vy;
-      // 벽 충돌
-      if(this.x+this.radius>width || this.x-this.radius<0) this.vx*=-1;
-      if(this.y+this.radius>height || this.y-this.radius<0) this.vy*=-1;
-    } else {
+    if(this.exploding){
       this.explodeFrame++;
-      if(this.explodeFrame>10) this.alive=false;
+      if(this.explodeFrame > 10) this.alive = false;
+    } else {
+      this.x += this.vx;
+      this.y += this.vy;
+      if(this.x + this.radius > width || this.x - this.radius < 0) this.vx *= -1;
+      if(this.y + this.radius > height || this.y - this.radius < 0) this.vy *= -1;
     }
   }
   
   checkClick(mx,my){
-    const dx=this.x-mx;
-    const dy=this.y-my;
-    return dx*dx+dy*dy<=this.radius*this.radius;
+    const dx = this.x - mx;
+    const dy = this.y - my;
+    return dx*dx + dy*dy <= this.radius*this.radius;
   }
   
   explode(){
-    this.exploding=true;
-    this.explodeFrame=0;
+    this.exploding = true;
+    this.explodeFrame = 0;
   }
 }
 
 const balls=[];
-const colors=['#ff5555','#55ff55','#5555ff','#ffff55','#ff55ff','#55ffff'];
 const NUM_BALLS = 80;
 for(let i=0;i<NUM_BALLS;i++){
-  const radius=10;
+  const radius=20;
   const x=Math.random()*(width-2*radius)+radius;
   const y=Math.random()*(height-2*radius)+radius;
-  const vx=(Math.random()-0.5)*12; 
-  const vy=(Math.random()-0.5)*12; 
-  const color=colors[Math.floor(Math.random()*colors.length)];
-  balls.push(new Ball(x,y,radius,vx,vy,color));
+  const vx=(Math.random()-0.5)*8; 
+  const vy=(Math.random()-0.5)*8; 
+  const emoji=emojis[Math.floor(Math.random()*emojis.length)];
+  balls.push(new Ball(x,y,radius,vx,vy,emoji));
 }
 
 let score=0;
+let timeLeft=30;
 const scoreEl=document.getElementById('score');
+const timerEl=document.getElementById('timer');
+const endScreen=document.getElementById('endScreen');
+const endScore=document.getElementById('endScore');
+const restartBtn=document.getElementById('restartBtn');
 
 canvas.addEventListener('click',(e)=>{
-  const mx=e.clientX;
-  const my=e.clientY;
+  if (timeLeft <= 0) return; 
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  
   balls.forEach(ball=>{
     if(ball.alive && !ball.exploding && ball.checkClick(mx,my)){
       ball.explode();
@@ -159,15 +209,38 @@ function animate(){
   ctx.clearRect(0,0,width,height);
   balls.forEach(ball=>{
     ball.update();
-    if(ball.alive) ball.draw();
+    ball.draw();
   });
-  requestAnimationFrame(animate);
+  if (timeLeft > 0) requestAnimationFrame(animate);
 }
 animate();
 
+const timerInterval = setInterval(()=>{
+  timeLeft--;
+  timerEl.textContent = `Time: ${timeLeft}`;
+  
+  if(timeLeft <= 0){
+    clearInterval(timerInterval);
+    endGame();
+  }
+},1000);
+
+function endGame(){
+ 
+  balls.forEach(b=>b.alive=false);
+  ctx.clearRect(0,0,width,height);
+  
+  endScore.textContent = `최종 점수: ${score}`;
+  endScreen.style.display = "block";
+}
+
+restartBtn.addEventListener('click', ()=>{
+  window.location.reload();
+});
+
 document.getElementById("backBtn").addEventListener("click", ()=>{
-      window.location.href = "../index.html";
-    });
+  window.location.href = "../index.html";
+});
 </script>
 </body>
 </html>

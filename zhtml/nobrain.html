@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Falling Images</title>
 <style>
-    @font-face {
+@font-face {
   font-family: 'YunChorokwoosanEoriniMinguk';
   src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408@1.0/YoonChildfundkoreaMinGuk.woff2') format('woff2');
   font-weight: normal;
   font-display: swap;
 }
 
-    #backBtn {
+#backBtn {
   position: fixed;
   top: 20px;
   left: 20px;
@@ -28,54 +28,76 @@
 }
 #backBtn:hover { background: #555; }
 
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 20px;
-    margin: 0;
-    padding: 20px;
-    background-color: #f0f0f0;
-  }
-  .container-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .container {
-    position: relative;
-    width: 500px;
-    height: 80vh;
-    background-color: #fff;
-    border: 2px dashed #aaa;
-    overflow: visible;
-  }
-  .falling-img {
-    position: absolute;
-  }
-  .buttons {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
-  }
-  button {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  #savedImages {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .savedImage {
-    width: 500px;
-    border: 1px solid #ccc;
-  }
+body {
+  display: flex;
+  justify-content: center; 
+  align-items: flex-start;
+  gap: 20px;
+  margin: 0;
+  padding: 20px;
+  background-color: #f0f0f0;
+  font-family: 'YunChorokwoosanEoriniMinguk', sans-serif;
+  overflow-x: hidden;
+}
+
+
+.container-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.container {
+  position: relative;
+  width: 500px;
+  height: 80vh;
+  background-color: #fff;
+  border: 2px dashed #aaa;
+  overflow: hidden;
+}
+
+.falling-img {
+  position: absolute;
+}
+
+.buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#savedImagesWrapper {
+  max-height: 80vh;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
+  width: 320px;
+}
+
+#savedImages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.savedImage {
+  border: 1px solid #ccc;
+  width: 300px;
+}
 </style>
 </head>
 <body>
-    <button id="backBtn">무기력 세계로 돌아가기</button>
+<button id="backBtn">무기력 세계로 돌아가기</button>
 
 <div class="container-wrapper">
   <div class="container" id="container"></div>
@@ -86,148 +108,93 @@
   </div>
 </div>
 
-<div id="savedImages"></div>
+<div id="savedImagesWrapper">
+  <div id="savedImages"></div>
+</div>
 
 <script>
 const container = document.getElementById('container');
-const stopBtn = document.getElementById('stopBtn');
 const resetBtn = document.getElementById('resetBtn');
+const stopBtn = document.getElementById('stopBtn');
 const saveBtn = document.getElementById('saveBtn');
 const savedImages = document.getElementById('savedImages');
 
-const shapeCount = 4;
-let currentIndex = 0;
-let currentShape = null;
-let shapesList = [];
-let firstTwoData = []; // 1~2번째 이미지 정보 [{left, width}]
+const imageLinks = ["1-1.png","1-2.png","1-3.png","1-4.png"];
 
-// 이미지 링크
-const imageLinks = [
-  "1-1.png",
-  "1-2.png",
-  "1-3.png",
-  "1-4.png"
-];
+let fallingImages = [];
+const FALL_SPEED = 7;
+const SPAWN_INTERVAL = 300;
+let isStopped = false;
 
-// X 좌표 겹침 방지 함수
-function getNonOverlappingX(width, min=0, max=500) {
-  let tries = 0;
-  let left;
-  while (tries < 100) {
-    left = min + Math.random() * (max - min - width);
-    const overlap = shapesList.some(img => {
-      const imgLeft = parseFloat(img.style.left);
-      const imgWidth = parseFloat(img.style.width);
-      return !(left + width < imgLeft || left > imgLeft + imgWidth);
-    });
-    if (!overlap) return left;
-    tries++;
-  }
-  return left; // 100번 실패하면 그냥 반환
-}
-
-function createShape() {
+function createFallingImage() {
   const img = document.createElement('img');
   img.classList.add('falling-img');
-  img.src = imageLinks[currentIndex];
-
+  img.src = imageLinks[Math.floor(Math.random() * imageLinks.length)];
   img.onload = () => {
     let w = img.naturalWidth;
     let h = img.naturalHeight;
-    if (w > 150) {
-      const ratio = 150 / w;
-      w = 150;
-      h = h * ratio;
-    }
-    img.style.width = w + "px";
-    img.style.height = h + "px";
-
-    // X 좌표 결정
-    let left;
-    if (currentIndex < 2) {
-      left = getNonOverlappingX(w);
-      firstTwoData.push({left, width: w});
-    } else {
-      const minX = Math.min(firstTwoData[0].left, firstTwoData[1].left);
-      const maxX = Math.max(firstTwoData[0].left + firstTwoData[0].width,
-                            firstTwoData[1].left + firstTwoData[1].width);
-      left = getNonOverlappingX(w, minX, maxX);
-    }
-
-    img.style.left = left + "px";
+    if (w > 80) { const ratio = 80 / w; w = 80; h *= ratio; }
+    img.style.width = w + 'px';
+    img.style.height = h + 'px';
+    img.style.left = Math.random() * (container.clientWidth - w) + 'px';
+    img.style.top = -h + 'px';
+    container.appendChild(img);
+    fallingImages.push({el: img, width: w, height: h, x: parseFloat(img.style.left), y: -h});
   };
-
-  let position = -50;
-  const speed = 3 + Math.random() * 10;
-
-  function fall() {
-    position += speed;
-    img.style.top = position + "px";
-    img.animationId = requestAnimationFrame(fall);
-  }
-
-  img.animationId = requestAnimationFrame(fall);
-  container.appendChild(img);
-  currentShape = img;
-  shapesList.push(img);
 }
 
-// 멈춰 버튼
+const spawnIntervalId = setInterval(() => { if(!isStopped) createFallingImage(); }, SPAWN_INTERVAL);
+
+function animate() {
+  fallingImages.forEach(f => {
+    if (!isStopped) {
+      f.y += FALL_SPEED;
+      if (f.y > container.clientHeight) f.y = -f.height;
+      f.el.style.top = f.y + 'px';
+    }
+  });
+  requestAnimationFrame(animate);
+}
+animate();
+
 stopBtn.addEventListener('click', () => {
-  if(currentShape) {
-    cancelAnimationFrame(currentShape.animationId);
-    currentShape = null;
-    currentIndex++;
-    if(currentIndex < shapeCount) createShape();
-  }
+  isStopped = !isStopped;
+  stopBtn.textContent = isStopped ? "계속!" : "멈춰!";
 });
 
-// 다시하기 버튼
 resetBtn.addEventListener('click', () => {
-  shapesList.forEach(img => cancelAnimationFrame(img.animationId));
-  shapesList.forEach(img => img.remove());
-  shapesList = [];
-  firstTwoData = [];
-  currentIndex = 0;
-  currentShape = null;
-  createShape();
+  fallingImages.forEach(f => f.el.remove());
+  fallingImages = [];
+  isStopped = false;
+  stopBtn.textContent = "멈춰!";
 });
 
-// 저장하기 버튼
 saveBtn.addEventListener('click', () => {
-  savedImages.innerHTML = '';
   const canvas = document.createElement('canvas');
-  canvas.width = container.clientWidth;
-  canvas.height = container.clientHeight;
+  const canvasWidth = 300;
+  const scale = canvasWidth / container.clientWidth;
+  let maxY = 0;
+  fallingImages.forEach(f => { if(f.y + f.height > maxY) maxY = f.y + f.height; });
+  const canvasHeight = Math.max(maxY * scale, 300); // 최소 높이 300
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
+
   const ctx = canvas.getContext('2d');
+  fallingImages.forEach(f => {
+    const img = new Image();
+    img.src = f.el.src;
+    img.onload = () => {
+      ctx.drawImage(img, f.x * scale, f.y * scale, f.width * scale, f.height * scale);
+    };
+  });
 
-  let loadedCount = 0;
-  shapesList.forEach(img => { if(img.complete) loadedCount++; });
-
-  if (loadedCount === shapesList.length) {
-    shapesList.forEach(img => {
-      const left = parseFloat(img.style.left);
-      const top = parseFloat(img.style.top);
-      const w = parseFloat(img.style.width);
-      const h = parseFloat(img.style.height);
-      ctx.drawImage(img, left, top, w, h);
-    });
-    const savedImg = new Image();
-    savedImg.src = canvas.toDataURL();
-    savedImg.classList.add('savedImage');
-    savedImages.appendChild(savedImg);
-  } else {
-    alert("이미지가 모두 로드될 때까지 기다려주세요.");
-  }
+  canvas.classList.add('savedImage');
+  savedImages.appendChild(canvas);
 });
 
-// 첫 번째 이미지 생성
-createShape();
-
-backBtn.addEventListener('click', () => {
+document.getElementById('backBtn').addEventListener('click', () => {
   window.location.href = "../index.html";
 });
 </script>
-
 </body>
 </html>
